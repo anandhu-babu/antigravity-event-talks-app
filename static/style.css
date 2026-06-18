@@ -185,6 +185,32 @@ header {
     transform: translateY(0);
 }
 
+#export-csv-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-main);
+    transition: var(--transition);
+}
+
+#export-csv-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    border-color: var(--color-general);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+}
+
+#export-csv-btn:active {
+    transform: translateY(0);
+}
+
 .spin {
     animation: spin 1s linear infinite;
 }
@@ -425,7 +451,12 @@ header {
 .badge.fixed { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
 .badge.general { background: rgba(6, 182, 212, 0.15); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
 
-.tweet-action-btn {
+.card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.card-action-btn {
     background: transparent;
     color: var(--text-secondary);
     border: 1px solid var(--border-glass);
@@ -441,10 +472,21 @@ header {
     transition: var(--transition);
 }
 
-.tweet-action-btn:hover {
+.card-action-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.card-action-btn.tweet-btn:hover {
     color: #1da1f2;
     border-color: #1da1f2;
     background: rgba(29, 161, 242, 0.05);
+}
+
+.card-action-btn.copy-btn:hover {
+    color: var(--color-feature);
+    border-color: var(--color-feature);
+    background: rgba(16, 185, 129, 0.05);
 }
 
 .card-body {

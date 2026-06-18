@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const refreshBtn = document.getElementById('refresh-btn');
     const refreshIcon = document.getElementById('refresh-icon');
+    const exportCsvBtn = document.getElementById('export-csv-btn');
     const lastUpdatedText = document.getElementById('last-updated-text');
     const statusDot = document.querySelector('.status-dot');
     
@@ -171,17 +172,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     catBadge.className = `badge ${badgeClass}`;
                     catBadge.textContent = item.category;
                     
-                    const tweetBtn = document.createElement('button');
-                    tweetBtn.className = 'tweet-action-btn';
-                    tweetBtn.innerHTML = '<i class="fa-brands fa-x-twitter"></i> Tweet';
+                    const actionsContainer = document.createElement('div');
+                    actionsContainer.className = 'card-actions';
                     
-                    // Wire tweet click
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'card-action-btn copy-btn';
+                    copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy';
+                    copyBtn.addEventListener('click', () => {
+                        const copyText = `BigQuery Release Note (${release.date}) - [${item.category}]:\n${item.text}\n\nRead more: ${release.link}`;
+                        navigator.clipboard.writeText(copyText).then(() => {
+                            showToast('Copied to clipboard!', 'success');
+                        }).catch(err => {
+                            console.error('Failed to copy: ', err);
+                            showToast('Failed to copy text', 'error');
+                        });
+                    });
+
+                    const tweetBtn = document.createElement('button');
+                    tweetBtn.className = 'card-action-btn tweet-btn';
+                    tweetBtn.innerHTML = '<i class="fa-brands fa-x-twitter"></i> Tweet';
                     tweetBtn.addEventListener('click', () => {
                         openTweetComposer(release.date, item.category, item.text, release.link);
                     });
                     
+                    actionsContainer.appendChild(copyBtn);
+                    actionsContainer.appendChild(tweetBtn);
+                    
                     header.appendChild(catBadge);
-                    header.appendChild(tweetBtn);
+                    header.appendChild(actionsContainer);
                     card.appendChild(header);
                     
                     const body = document.createElement('div');
@@ -276,9 +294,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
+    function exportToCSV() {
+        if (!releaseNotes || releaseNotes.length === 0) {
+            showToast('No data to export', 'error');
+            return;
+        }
+
+        const rows = [
+            ["Date", "Category", "Description", "Link"]
+        ];
+
+        let count = 0;
+        releaseNotes.forEach(release => {
+            release.items.forEach(item => {
+                const matchesCategory = currentCategoryFilter === 'all' || 
+                    item.category.toLowerCase().includes(currentCategoryFilter);
+                
+                const matchesSearch = searchQuery === '' || 
+                    item.text.toLowerCase().includes(searchQuery) ||
+                    item.category.toLowerCase().includes(searchQuery) ||
+                    release.date.toLowerCase().includes(searchQuery);
+                    
+                if (matchesCategory && matchesSearch) {
+                    rows.push([release.date, item.category, item.text, release.link]);
+                    count++;
+                }
+            });
+        });
+
+        if (count === 0) {
+            showToast('No matching records found to export', 'error');
+            return;
+        }
+
+        const csvContent = rows.map(row => 
+            row.map(value => `"${value.replace(/"/g, '""')}"`).join(",")
+        ).join("\r\n");
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        
+        const timestamp = new Date().toISOString().slice(0, 10);
+        link.setAttribute("download", `bigquery_release_notes_${timestamp}.csv`);
+        document.body.appendChild(link);
+        
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showToast(`Successfully exported ${count} records to CSV!`, 'success');
+    }
+
     // Event Listeners
     refreshBtn.addEventListener('click', () => loadReleases(true));
     retryBtn.addEventListener('click', () => loadReleases(true));
+    exportCsvBtn.addEventListener('click', exportToCSV);
     
     searchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value.toLowerCase().trim();
