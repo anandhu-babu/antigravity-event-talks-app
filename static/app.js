@@ -151,7 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Date Header
                 const dateHeader = document.createElement('h2');
                 dateHeader.className = 'date-header';
-                dateHeader.textContent = release.date;
+                const relativeLabel = getRelativeDateLabel(release.date);
+                dateHeader.textContent = relativeLabel ? `${release.date} (${relativeLabel})` : release.date;
                 dateGroup.appendChild(dateHeader);
                 
                 // Render each card inside this date group
@@ -181,12 +182,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     copyBtn.className = 'card-action-btn copy-btn';
                     copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy';
                     copyBtn.addEventListener('click', () => {
+                        const originalHTML = copyBtn.innerHTML;
                         const copyText = `BigQuery Release Note (${release.date}) - [${item.category}]:\n${item.text}\n\nRead more: ${release.link}`;
+                        
+                        copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+                        copyBtn.disabled = true;
+                        
                         navigator.clipboard.writeText(copyText).then(() => {
                             showToast('Copied to clipboard!', 'success');
                         }).catch(err => {
                             console.error('Failed to copy: ', err);
                             showToast('Failed to copy text', 'error');
+                        }).finally(() => {
+                            setTimeout(() => {
+                                copyBtn.innerHTML = originalHTML;
+                                copyBtn.disabled = false;
+                            }, 1500);
                         });
                     });
 
@@ -206,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     const body = document.createElement('div');
                     body.className = 'card-body';
-                    body.innerHTML = item.html;
+                    body.innerHTML = highlightText(item.html, searchQuery);
                     card.appendChild(body);
                     
                     dateGroup.appendChild(card);
@@ -349,6 +360,38 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(`Successfully exported ${count} records to CSV!`, 'success');
     }
 
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    function highlightText(html, query) {
+        if (!query) return html;
+        const escapedQuery = escapeRegExp(query);
+        const regex = new RegExp(`(${escapedQuery})(?![^<>]*>)`, 'gi');
+        return html.replace(regex, '<mark class="search-highlight">$1</mark>');
+    }
+
+    function getRelativeDateLabel(dateStr) {
+        try {
+            const releaseDate = new Date(dateStr);
+            // Reference current date: 2026-06-18
+            const today = new Date('2026-06-18');
+            
+            releaseDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            
+            const diffTime = today - releaseDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays > 1 && diffDays <= 7) return `${diffDays} days ago`;
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
     // Theme Management
     const currentTheme = localStorage.getItem('theme');
     if (currentTheme === 'light') {
@@ -407,6 +450,20 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (e) => {
         if (e.target === tweetModal) {
             closeTweetComposer();
+        }
+    });
+
+    // Keyboard Shortcuts for accessibility
+    window.addEventListener('keydown', (e) => {
+        if (!tweetModal.classList.contains('hidden')) {
+            if (e.key === 'Escape') {
+                closeTweetComposer();
+            } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                if (!submitTweetBtn.disabled) {
+                    submitTweet();
+                }
+            }
         }
     });
 
