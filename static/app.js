@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshBtn = document.getElementById('refresh-btn');
     const refreshIcon = document.getElementById('refresh-icon');
     const exportCsvBtn = document.getElementById('export-csv-btn');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeIcon = document.getElementById('theme-icon');
     const lastUpdatedText = document.getElementById('last-updated-text');
     const statusDot = document.querySelector('.status-dot');
     
@@ -347,10 +349,34 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(`Successfully exported ${count} records to CSV!`, 'success');
     }
 
+    // Theme Management
+    const currentTheme = localStorage.getItem('theme');
+    if (currentTheme === 'light') {
+        document.body.classList.add('light-theme');
+        themeIcon.className = 'fa-solid fa-moon';
+    } else {
+        themeIcon.className = 'fa-solid fa-sun';
+    }
+
+    function toggleTheme() {
+        if (document.body.classList.contains('light-theme')) {
+            document.body.classList.remove('light-theme');
+            themeIcon.className = 'fa-solid fa-sun';
+            localStorage.setItem('theme', 'dark');
+            showToast('Swapped to dark theme!', 'success');
+        } else {
+            document.body.classList.add('light-theme');
+            themeIcon.className = 'fa-solid fa-moon';
+            localStorage.setItem('theme', 'light');
+            showToast('Swapped to light theme!', 'success');
+        }
+    }
+
     // Event Listeners
     refreshBtn.addEventListener('click', () => loadReleases(true));
     retryBtn.addEventListener('click', () => loadReleases(true));
     exportCsvBtn.addEventListener('click', exportToCSV);
+    themeToggleBtn.addEventListener('click', toggleTheme);
     
     searchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value.toLowerCase().trim();
